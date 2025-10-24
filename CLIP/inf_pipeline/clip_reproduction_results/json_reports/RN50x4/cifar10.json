@@ -1,0 +1,93 @@
+{
+    "top1_accuracy": 0.7735,
+    "top5_accuracy": 0.9757,
+    "full_classification_report": {
+        "airplane": {
+            "precision": 0.8475378787878788,
+            "recall": 0.895,
+            "f1-score": 0.8706225680933851,
+            "support": 1000.0
+        },
+        "automobile": {
+            "precision": 0.8624772313296903,
+            "recall": 0.947,
+            "f1-score": 0.9027645376549094,
+            "support": 1000.0
+        },
+        "bird": {
+            "precision": 0.7450611476952023,
+            "recall": 0.792,
+            "f1-score": 0.7678138633058653,
+            "support": 1000.0
+        },
+        "cat": {
+            "precision": 0.6594142259414226,
+            "recall": 0.788,
+            "f1-score": 0.717995444191344,
+            "support": 1000.0
+        },
+        "deer": {
+            "precision": 0.8612099644128114,
+            "recall": 0.484,
+            "f1-score": 0.6197183098591549,
+            "support": 1000.0
+        },
+        "dog": {
+            "precision": 0.7312992125984252,
+            "recall": 0.743,
+            "f1-score": 0.7371031746031745,
+            "support": 1000.0
+        },
+        "frog": {
+            "precision": 0.9564270152505446,
+            "recall": 0.439,
+            "f1-score": 0.6017820424948594,
+            "support": 1000.0
+        },
+        "horse": {
+            "precision": 0.5626892792247123,
+            "recall": 0.929,
+            "f1-score": 0.7008675971331574,
+            "support": 1000.0
+        },
+        "ship": {
+            "precision": 0.8905579399141631,
+            "recall": 0.83,
+            "f1-score": 0.8592132505175983,
+            "support": 1000.0
+        },
+        "truck": {
+            "precision": 0.9173553719008265,
+            "recall": 0.888,
+            "f1-score": 0.9024390243902439,
+            "support": 1000.0
+        },
+        "accuracy": 0.7735,
+        "macro avg": {
+            "precision": 0.8034029267055678,
+            "recall": 0.7735,
+            "f1-score": 0.7680319812243692,
+            "support": 10000.0
+        },
+        "weighted avg": {
+            "precision": 0.8034029267055678,
+            "recall": 0.7735,
+            "f1-score": 0.7680319812243693,
+            "support": 10000.0
+        }
+    },
+    "class_names": [
+        "airplane",
+        "automobile",
+        "bird",
+        "cat",
+        "deer",
+        "dog",
+        "frog",
+        "horse",
+        "ship",
+        "truck"
+    ],
+    "model_name": "RN50x4",
+    "dataset_name": "cifar10"
+}
