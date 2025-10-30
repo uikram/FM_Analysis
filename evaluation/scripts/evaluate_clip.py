@@ -1,11 +1,23 @@
 """
-CLIP Evaluation Script
+CLIP Evaluation Script with Fixed Imports
 Evaluates CLIP on CIFAR-10 zero-shot image classification
+
+Usage:
+  cd evaluation/scripts
+  CUDA_VISIBLE_DEVICES=2 python evaluate_clip.py --model_path ../../CLIP_radford21a/checkpoints/clip_best.pt
 """
 
 import sys
-sys.path.append('../CLIP_radford21a/src')
-sys.path.append('../evaluation/datasets')
+import os
+
+# Add parent directories to path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
+clip_src = os.path.join(project_root, 'CLIP_radford21a', 'src')
+eval_datasets = os.path.join(current_dir, '..', 'datasets')
+
+sys.path.insert(0, clip_src)
+sys.path.insert(0, eval_datasets)
 
 import torch
 from clip_model import CLIP
@@ -15,7 +27,6 @@ import numpy as np
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from tqdm import tqdm
 import json
-import os
 
 def evaluate_clip_zero_shot(model_path, batch_size=64, device='cuda'):
     """Evaluate CLIP on CIFAR-10 zero-shot classification"""
@@ -44,9 +55,12 @@ def evaluate_clip_zero_shot(model_path, batch_size=64, device='cuda'):
     
     # Load dataset
     print("\nLoading CIFAR-10 dataset...")
+    data_dir = os.path.join(current_dir, '..', 'data')
+    os.makedirs(data_dir, exist_ok=True)
+    
     _, test_loader, class_names = get_clip_dataloaders(
         batch_size=batch_size, 
-        root='./evaluation/data'
+        root=data_dir
     )
     print(f"✓ Loaded {len(test_loader.dataset)} test images")
     print(f"Classes: {class_names}")
@@ -162,14 +176,15 @@ def evaluate_clip_zero_shot(model_path, batch_size=64, device='cuda'):
               f"F1={metrics['f1-score']:.3f}")
     
     # Save results
-    os.makedirs('../evaluation/results/clip', exist_ok=True)
-    with open('../evaluation/results/clip/evaluation_results.json', 'w') as f:
+    results_dir = os.path.join(current_dir, '..', 'results', 'clip')
+    os.makedirs(results_dir, exist_ok=True)
+    
+    with open(os.path.join(results_dir, 'evaluation_results.json'), 'w') as f:
         json.dump(results, f, indent=2)
     
-    # Save confusion matrix
-    np.save('../evaluation/results/clip/confusion_matrix.npy', conf_matrix)
+    np.save(os.path.join(results_dir, 'confusion_matrix.npy'), conf_matrix)
     
-    print(f"\n✓ Results saved to evaluation/results/clip/")
+    print(f"\n✓ Results saved to {results_dir}/")
     print(f"  - evaluation_results.json")
     print(f"  - confusion_matrix.npy")
     
@@ -179,7 +194,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Evaluate CLIP on CIFAR-10')
     parser.add_argument('--model_path', type=str, 
-                       default='../CLIP_radford21a/checkpoints/clip_best.pt',
+                       default='../../CLIP_radford21a/checkpoints/clip_best.pt',
                        help='Path to trained model checkpoint')
     parser.add_argument('--batch_size', type=int, default=64,
                        help='Batch size for evaluation')

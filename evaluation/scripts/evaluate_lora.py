@@ -1,11 +1,23 @@
 """
-LoRA Evaluation Script  
+LoRA Evaluation Script with Fixed Imports
 Evaluates LoRA fine-tuning on IMDB sentiment classification
+
+Usage:
+  cd evaluation/scripts
+  CUDA_VISIBLE_DEVICES=2 python evaluate_lora.py --model_path ../../LoRA_2106.09685v1/checkpoints/lora_best.pt
 """
 
 import sys
-sys.path.append('../LoRA_2106.09685v1/src')
-sys.path.append('../evaluation/datasets')
+import os
+
+# Add parent directories to path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
+lora_src = os.path.join(project_root, 'LoRA_2106.09685v1', 'src')
+eval_datasets = os.path.join(current_dir, '..', 'datasets')
+
+sys.path.insert(0, lora_src)
+sys.path.insert(0, eval_datasets)
 
 import torch
 from lora_model import apply_lora_to_model
@@ -15,8 +27,8 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 from sklearn.metrics import classification_report, confusion_matrix
 from tqdm import tqdm
 import json
-import os
 import time
+import numpy as np
 
 def evaluate_lora_sentiment(model_path, rank=4, alpha=1, batch_size=32, device='cuda'):
     """Evaluate LoRA on IMDB sentiment classification"""
@@ -164,14 +176,15 @@ def evaluate_lora_sentiment(model_path, rank=4, alpha=1, batch_size=32, device='
     print(f"  Throughput: {samples_per_second:.1f} samples/second")
     
     # Save results
-    os.makedirs('../evaluation/results/lora', exist_ok=True)
-    with open('../evaluation/results/lora/evaluation_results.json', 'w') as f:
+    results_dir = os.path.join(current_dir, '..', 'results', 'lora')
+    os.makedirs(results_dir, exist_ok=True)
+    
+    with open(os.path.join(results_dir, 'evaluation_results.json'), 'w') as f:
         json.dump(results, f, indent=2)
     
-    import numpy as np
-    np.save('../evaluation/results/lora/confusion_matrix.npy', conf_matrix)
+    np.save(os.path.join(results_dir, 'confusion_matrix.npy'), conf_matrix)
     
-    print(f"\n✓ Results saved to evaluation/results/lora/")
+    print(f"\n✓ Results saved to {results_dir}/")
     print(f"  - evaluation_results.json")
     print(f"  - confusion_matrix.npy")
     
@@ -181,7 +194,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Evaluate LoRA on IMDB')
     parser.add_argument('--model_path', type=str,
-                       default='../LoRA_2106.09685v1/checkpoints/lora_best.pt',
+                       default='../../LoRA_2106.09685v1/checkpoints/lora_best.pt',
                        help='Path to LoRA checkpoint')
     parser.add_argument('--rank', type=int, default=4,
                        help='LoRA rank')
