@@ -1,6 +1,6 @@
 """
-Complete Model Comparison and Visualization Script
-Loads evaluation results from all three models and generates comprehensive comparisons
+Complete Model Comparison and Visualization Script (Robust Version)
+Loads evaluation results and handles missing keys safely.
 
 Usage:
   cd evaluation/scripts
@@ -72,44 +72,63 @@ def create_comparison_table(results):
     
     # CLIP data
     if results['clip']:
+        # Safely get metrics, defaulting to 0.0 or 'N/A' if not found
+        acc = results['clip'].get('accuracy', 0.0) * 100
+        top5_acc = results['clip'].get('top5_accuracy', 0.0) * 100
+        
         comparison_data.append({
             'Model': 'CLIP',
             'Task': 'Zero-shot Classification',
             'Dataset': 'CIFAR-10',
-            'Primary Metric': f"{results['clip']['accuracy']*100:.2f}%",
-            'Secondary Metric': f"Top-5: {results['clip']['top5_accuracy']*100:.2f}%",
-            'Total Params': '~100M',
-            'Trainable Params': '100M',
+            'Primary Metric': f"{acc:.2f}%",
+            'Secondary Metric': f"Top-5: {top5_acc:.2f}%" if top5_acc > 0 else 'N/A',
+            'Total Params': '~91M', # From training log
+            'Trainable Params': '~91M',
             'Trainable %': '100%',
             'Efficiency Factor': '1x'
         })
     
     # LoRA data
     if results['lora']:
+        acc = results['lora'].get('accuracy', 0.0) * 100
+        f1 = results['lora'].get('f1_score', 0.0)
+        stats = results['lora'].get('parameter_stats', {})
+        total_params = stats.get('total_params', 0)
+        trainable_params = stats.get('trainable_params', 0)
+        trainable_pct = stats.get('trainable_percentage', 0.0)
+        reduction = stats.get('reduction_factor', 0.0)
+        
         comparison_data.append({
             'Model': 'LoRA',
             'Task': 'Sentiment Classification',
             'Dataset': 'IMDB',
-            'Primary Metric': f"{results['lora']['accuracy']*100:.2f}%",
-            'Secondary Metric': f"F1: {results['lora']['f1_score']:.4f}",
-            'Total Params': f"{results['lora']['parameter_stats']['total_params']:,}",
-            'Trainable Params': f"{results['lora']['parameter_stats']['trainable_params']:,}",
-            'Trainable %': f"{results['lora']['parameter_stats']['trainable_percentage']:.2f}%",
-            'Efficiency Factor': f"{results['lora']['parameter_stats']['reduction_factor']:.0f}x"
+            'Primary Metric': f"{acc:.2f}%",
+            'Secondary Metric': f"F1: {f1:.4f}",
+            'Total Params': f"{total_params:,}",
+            'Trainable Params': f"{trainable_params:,}",
+            'Trainable %': f"{trainable_pct:.2f}%",
+            'Efficiency Factor': f"{reduction:.0f}x"
         })
     
     # Frozen data
     if results['frozen']:
+        bleu4 = results['frozen'].get('bleu4', 0.0)
+        perplexity = results['frozen'].get('perplexity', 0.0)
+        stats = results['frozen'].get('parameter_stats', {})
+        total_params = stats.get('total_params', 0)
+        trainable_params = stats.get('trainable_params', 0)
+        trainable_pct = stats.get('trainable_percentage', 0.0)
+        
         comparison_data.append({
             'Model': 'Frozen',
             'Task': 'Image Captioning',
-            'Dataset': 'Synthetic/Flickr8k',
-            'Primary Metric': f"BLEU-4: {results['frozen']['bleu4']:.4f}",
-            'Secondary Metric': f"Perplexity: {results['frozen']['perplexity']:.2f}",
-            'Total Params': f"{results['frozen']['parameter_stats']['total_params']:,}",
-            'Trainable Params': f"{results['frozen']['parameter_stats']['trainable_params']:,}",
-            'Trainable %': f"{results['frozen']['parameter_stats']['trainable_percentage']:.2f}%",
-            'Efficiency Factor': f"{100/results['frozen']['parameter_stats']['trainable_percentage']:.0f}x"
+            'Dataset': 'Flickr8k (subset)',
+            'Primary Metric': f"BLEU-4: {bleu4:.4f}",
+            'Secondary Metric': f"Perplexity: {perplexity:.2f}" if perplexity > 0 else 'N/A',
+            'Total Params': f"{total_params:,}",
+            'Trainable Params': f"{trainable_params:,}",
+            'Trainable %': f"{trainable_pct:.2f}%",
+            'Efficiency Factor': f"{100 / trainable_pct if trainable_pct > 0 else 0:.0f}x"
         })
     
     df = pd.DataFrame(comparison_data)
@@ -132,18 +151,22 @@ def plot_parameter_efficiency(results):
     if results['clip']:
         models.append('CLIP')
         trainable_pcts.append(100.0)
-        total_params.append(100)  # Million
+        total_params.append(91.3)  # Million, from your training log
     
-    if results['lora']:
+    if results['lora'] and 'parameter_stats' in results['lora']:
         models.append('LoRA')
-        trainable_pcts.append(results['lora']['parameter_stats']['trainable_percentage'])
-        total_params.append(results['lora']['parameter_stats']['total_params'] / 1e6)
+        trainable_pcts.append(results['lora']['parameter_stats'].get('trainable_percentage', 0.0))
+        total_params.append(results['lora']['parameter_stats'].get('total_params', 0) / 1e6)
     
-    if results['frozen']:
+    if results['frozen'] and 'parameter_stats' in results['frozen']:
         models.append('Frozen')
-        trainable_pcts.append(results['frozen']['parameter_stats']['trainable_percentage'])
-        total_params.append(results['frozen']['parameter_stats']['total_params'] / 1e6)
+        trainable_pcts.append(results['frozen']['parameter_stats'].get('trainable_percentage', 0.0))
+        total_params.append(results['frozen']['parameter_stats'].get('total_params', 0) / 1e6)
     
+    if not models:
+        print("! No data to plot for parameter efficiency.")
+        return
+        
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
     
     # Plot 1: Trainable percentage
@@ -153,7 +176,6 @@ def plot_parameter_efficiency(results):
     ax1.set_title('Parameter Efficiency Comparison', fontsize=14, fontweight='bold')
     ax1.set_ylim(0, 105)
     
-    # Add value labels on bars
     for bar in bars1:
         height = bar.get_height()
         ax1.text(bar.get_x() + bar.get_width()/2., height,
@@ -165,9 +187,9 @@ def plot_parameter_efficiency(results):
     ax2.set_title('Model Size Comparison', fontsize=14, fontweight='bold')
     ax2.set_yscale('log')
     
-    # Add value labels
     for i, (model, params) in enumerate(zip(models, total_params)):
-        ax2.text(i, params, f'{params:.1f}M', ha='center', va='bottom')
+        if params > 0:
+            ax2.text(i, params, f'{params:.1f}M', ha='center', va='bottom')
     
     plt.tight_layout()
     save_path = os.path.join(viz_dir, 'parameter_efficiency.png')
@@ -182,9 +204,10 @@ def plot_confusion_matrices(results):
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
     
     # CLIP confusion matrix
-    if results['clip']:
+    if results['clip'] and 'confusion_matrix' in results['clip']:
         clip_cm = np.array(results['clip']['confusion_matrix'])
-        class_names = list(results['clip']['per_class_accuracy'].keys())
+        class_names = list(results['clip'].get('classification_report', {}).keys())
+        class_names = [c for c in class_names if c not in ['accuracy', 'macro avg', 'weighted avg']]
         
         sns.heatmap(clip_cm, annot=True, fmt='d', cmap='Blues', 
                    xticklabels=class_names, yticklabels=class_names,
@@ -192,9 +215,12 @@ def plot_confusion_matrices(results):
         axes[0].set_title('CLIP Confusion Matrix (CIFAR-10)', fontweight='bold')
         axes[0].set_ylabel('True Label')
         axes[0].set_xlabel('Predicted Label')
+    else:
+        axes[0].text(0.5, 0.5, 'CLIP Confusion Matrix\nData Not Found', ha='center', va='center')
+        axes[0].set_title('CLIP')
     
     # LoRA confusion matrix
-    if results['lora']:
+    if results['lora'] and 'confusion_matrix' in results['lora']:
         lora_cm = np.array(results['lora']['confusion_matrix'])
         labels = ['Negative', 'Positive']
         
@@ -204,6 +230,9 @@ def plot_confusion_matrices(results):
         axes[1].set_title('LoRA Confusion Matrix (IMDB)', fontweight='bold')
         axes[1].set_ylabel('True Label')
         axes[1].set_xlabel('Predicted Label')
+    else:
+        axes[1].text(0.5, 0.5, 'LoRA Confusion Matrix\nData Not Found', ha='center', va='center')
+        axes[1].set_title('LoRA')
     
     plt.tight_layout()
     save_path = os.path.join(viz_dir, 'confusion_matrices.png')
@@ -218,61 +247,73 @@ def plot_performance_summary(results):
     fig, axes = plt.subplots(2, 2, figsize=(15, 12))
     
     # 1. Accuracy comparison (where applicable)
-    models = []
+    models_acc = []
     accuracies = []
     
-    if results['clip']:
-        models.append('CLIP\n(Top-1)')
-        accuracies.append(results['clip']['accuracy'] * 100)
+    if results['clip'] and 'accuracy' in results['clip']:
+        models_acc.append('CLIP\n(Top-1)')
+        accuracies.append(results['clip'].get('accuracy', 0.0) * 100)
     
-    if results['lora']:
-        models.append('LoRA\n(Binary)')
-        accuracies.append(results['lora']['accuracy'] * 100)
+    if results['lora'] and 'accuracy' in results['lora']:
+        models_acc.append('LoRA\n(Binary)')
+        accuracies.append(results['lora'].get('accuracy', 0.0) * 100)
     
-    if models:
-        axes[0, 0].bar(models, accuracies, color=['#3498db', '#e74c3c'])
+    if models_acc:
+        axes[0, 0].bar(models_acc, accuracies, color=['#3498db', '#e74c3c'])
         axes[0, 0].set_ylabel('Accuracy (%)')
         axes[0, 0].set_title('Classification Accuracy', fontweight='bold')
         axes[0, 0].set_ylim(0, 100)
         
-        for i, (model, acc) in enumerate(zip(models, accuracies)):
+        for i, (model, acc) in enumerate(zip(models_acc, accuracies)):
             axes[0, 0].text(i, acc + 2, f'{acc:.1f}%', ha='center')
+    else:
+        axes[0, 0].text(0.5, 0.5, 'Accuracy Data Not Found', ha='center', va='center')
     
     # 2. Efficiency factor
-    if results['lora'] and results['frozen']:
-        models_eff = ['LoRA', 'Frozen']
-        efficiency = [
-            results['lora']['parameter_stats']['reduction_factor'],
-            100 / results['frozen']['parameter_stats']['trainable_percentage']
-        ]
+    models_eff = []
+    efficiency = []
+    if results['lora'] and 'parameter_stats' in results['lora']:
+        models_eff.append('LoRA')
+        efficiency.append(results['lora']['parameter_stats'].get('reduction_factor', 0.0))
+    if results['frozen'] and 'parameter_stats' in results['frozen']:
+        models_eff.append('Frozen')
+        pct = results['frozen']['parameter_stats'].get('trainable_percentage', 0.0)
+        efficiency.append(100 / pct if pct > 0 else 0)
         
+    if models_eff:
         axes[0, 1].bar(models_eff, efficiency, color=['#e74c3c', '#2ecc71'])
         axes[0, 1].set_ylabel('Efficiency Factor (x)')
         axes[0, 1].set_title('Parameter Efficiency (Higher = Better)', fontweight='bold')
         axes[0, 1].set_yscale('log')
         
         for i, (model, eff) in enumerate(zip(models_eff, efficiency)):
-            axes[0, 1].text(i, eff, f'{eff:.0f}x', ha='center', va='bottom')
+            if eff > 0:
+                axes[0, 1].text(i, eff, f'{eff:.0f}x', ha='center', va='bottom')
+    else:
+        axes[0, 1].text(0.5, 0.5, 'Efficiency Data Not Found', ha='center', va='center')
+
     
     # 3. Per-class performance for CLIP
-    if results['clip']:
-        per_class = results['clip']['per_class_accuracy']
-        classes = list(per_class.keys())
-        accs = [per_class[c] * 100 for c in classes]
+    if results['clip'] and 'classification_report' in results['clip']:
+        report = results['clip']['classification_report']
+        classes = [k for k in report.keys() if k not in ['accuracy', 'macro avg', 'weighted avg']]
+        accs = [report[c].get('recall', 0.0) * 100 for c in classes] # Recall is per-class accuracy
         
         axes[1, 0].barh(classes, accs, color='#3498db')
-        axes[1, 0].set_xlabel('Accuracy (%)')
+        axes[1, 0].set_xlabel('Accuracy (Recall) (%)')
         axes[1, 0].set_title('CLIP Per-Class Accuracy', fontweight='bold')
         axes[1, 0].set_xlim(0, 100)
+    else:
+        axes[1, 0].text(0.5, 0.5, 'CLIP Report Data Not Found', ha='center', va='center')
     
     # 4. LoRA metrics breakdown
     if results['lora']:
         metrics = ['Accuracy', 'Precision', 'Recall', 'F1-Score']
         values = [
-            results['lora']['accuracy'] * 100,
-            results['lora']['precision'] * 100,
-            results['lora']['recall'] * 100,
-            results['lora']['f1_score'] * 100
+            results['lora'].get('accuracy', 0.0) * 100,
+            results['lora'].get('precision', 0.0) * 100,
+            results['lora'].get('recall', 0.0) * 100,
+            results['lora'].get('f1_score', 0.0) * 100
         ]
         
         axes[1, 1].bar(metrics, values, color='#e74c3c')
@@ -283,6 +324,9 @@ def plot_performance_summary(results):
         
         for i, (metric, val) in enumerate(zip(metrics, values)):
             axes[1, 1].text(i, val + 2, f'{val:.1f}%', ha='center')
+    else:
+        axes[1, 1].text(0.5, 0.5, 'LoRA Metrics Data Not Found', ha='center', va='center')
+
     
     plt.tight_layout()
     save_path = os.path.join(viz_dir, 'performance_summary.png')
@@ -311,23 +355,30 @@ def generate_report(results, df):
     report.append("-"*70)
     
     if results['clip']:
-        report.append("\n[CLIP - Zero-Shot Image Classification]")
-        report.append(f"  Top-1 Accuracy: {results['clip']['accuracy']*100:.2f}%")
-        report.append(f"  Top-5 Accuracy: {results['clip']['top5_accuracy']*100:.2f}%")
-        report.append(f"  Best class: {max(results['clip']['per_class_accuracy'].items(), key=lambda x: x[1])}")
+        report.append("\n[CLIP - Zero-Shot Image Classification (CIFAR-10)]")
+        report.append(f"  Top-1 Accuracy: {results['clip'].get('accuracy', 0.0)*100:.2f}%")
+        report.append(f"  Top-5 Accuracy: {results['clip'].get('top5_accuracy', 0.0)*100:.2f}%")
+        if 'classification_report' in results['clip']:
+            best_class = max(
+                (k for k in results['clip']['classification_report'].keys() if k not in ['accuracy', 'macro avg', 'weighted avg']),
+                key=lambda k: results['clip']['classification_report'][k].get('recall', 0.0)
+            )
+            report.append(f"  Best class (by recall): {best_class}")
     
     if results['lora']:
-        report.append("\n[LoRA - Sentiment Classification]")
-        report.append(f"  Accuracy: {results['lora']['accuracy']*100:.2f}%")
-        report.append(f"  F1-Score: {results['lora']['f1_score']:.4f}")
-        report.append(f"  Trainable params: {results['lora']['parameter_stats']['trainable_params']:,}")
-        report.append(f"  Efficiency: {results['lora']['parameter_stats']['reduction_factor']:.0f}x reduction")
+        stats = results['lora'].get('parameter_stats', {})
+        report.append("\n[LoRA - Sentiment Classification (IMDB)]")
+        report.append(f"  Accuracy: {results['lora'].get('accuracy', 0.0)*100:.2f}%")
+        report.append(f"  F1-Score: {results['lora'].get('f1_score', 0.0):.4f}")
+        report.append(f"  Trainable params: {stats.get('trainable_params', 0):,}")
+        report.append(f"  Efficiency: {stats.get('reduction_factor', 0.0):.0f}x reduction")
     
     if results['frozen']:
-        report.append("\n[Frozen - Image Captioning]")
-        report.append(f"  BLEU-4: {results['frozen']['bleu4']:.4f}")
-        report.append(f"  Perplexity: {results['frozen']['perplexity']:.2f}")
-        report.append(f"  Trainable %: {results['frozen']['parameter_stats']['trainable_percentage']:.2f}%")
+        stats = results['frozen'].get('parameter_stats', {})
+        report.append("\n[Frozen - Image Captioning (Flickr8k)]")
+        report.append(f"  BLEU-4: {results['frozen'].get('bleu4', 0.0):.4f}")
+        report.append(f"  Perplexity: {results['frozen'].get('perplexity', 0.0):.2f}")
+        report.append(f"  Trainable %: {stats.get('trainable_percentage', 0.0):.2f}%")
     
     report.append("\n" + "="*70)
     
@@ -369,7 +420,7 @@ def main():
     # Generate report
     generate_report(results, df)
     
-    print("\n" + "="*70)
+    print("\n" + "="*7)
     print("✅ COMPARISON COMPLETE!")
     print("="*70)
     print(f"\nResults saved to:")

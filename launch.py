@@ -54,17 +54,17 @@ def run_command(cmd, cwd):
 
 def train_clip(args):
     """Runs the A5000-optimized CLIP training."""
-    cmd = f"python src/train_a5000.py --epochs {args.epochs} --batch_size {args.batch_size_clip}"
+    cmd = f"python src/train.py --epochs {args.epochs} --batch_size {args.batch_size_clip}"
     return run_command(cmd, cwd="CLIP_radford21a")
 
 def train_lora(args):
     """Runs the A5000-optimized LoRA training."""
-    cmd = f"python src/train_a5000.py --epochs {args.epochs} --batch_size {args.batch_size_lora} --rank {args.rank}"
+    cmd = f"python src/train.py --epochs {args.epochs} --batch_size {args.batch_size_lora} --rank {args.rank}"
     return run_command(cmd, cwd="LoRA_2106.09685v1")
 
 def train_frozen(args):
     """Runs the A5000-optimized Frozen training."""
-    cmd = f"python src/train_a5000.py --epochs {args.epochs} --batch_size {args.batch_size_frozen}"
+    cmd = f"python src/train.py --epochs {args.epochs} --batch_size {args.batch_size_frozen}"
     return run_command(cmd, cwd="Frozen_2106.13884v2")
 
 def main():

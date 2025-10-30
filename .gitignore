@@ -1,2 +1,12 @@
-*md
-*pt
+# Python cache & build files
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Generated data and results
+evaluation/data/
+evaluation/results/
+evaluation/visualizations/
+
+# OS files
+.DS_Store
