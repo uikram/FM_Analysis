@@ -13,7 +13,15 @@ class ImageEncoder(nn.Module):
     """Image encoder using ResNet-50 as backbone"""
     def __init__(self, embed_dim=512, pretrained=True):
         super().__init__()
-        resnet = models.resnet50(pretrained=pretrained)
+
+        # Use the new 'weights' parameter API
+        if pretrained:
+            weights = models.ResNet50_Weights.IMAGENET1K_V1
+        else:
+            weights = None
+
+        resnet = models.resnet50(weights=weights)
+
         self.backbone = nn.Sequential(*list(resnet.children())[:-1])
         self.projection = nn.Linear(2048, embed_dim)
 

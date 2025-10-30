@@ -5,7 +5,7 @@ This script is intended to be run by setting the GPU in the terminal:
 CUDA_VISIBLE_DEVICES=2 python src/train_a5000.py
 """
 import os
-
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import torch
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
@@ -57,10 +57,18 @@ def train_lora(args):
         print(f"GPU Name: {torch.cuda.get_device_name(0)}") 
 
     model = AutoModelForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=args.num_classes)
+
+    # --- ADD THIS SECTION TO FIX LORA ---
+    # Freeze all parameters of the base model
+    print("Freezing base model parameters...")
+    for param in model.parameters():
+        param.requires_grad = False
+    # --- END OF FIX ---
+
     # Target distilbert's attention linear layers
+    # This will add the new, trainable LoRA parameters
     model = apply_lora_to_model(model, rank=args.rank, alpha=args.alpha, target_modules=['q_lin', 'v_lin'])
     model = model.to(device)
-
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Total: {total_params:,}, Trainable: {trainable_params:,}, Reduction: {total_params/(trainable_params+1e-9):.1f}x")

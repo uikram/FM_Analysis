@@ -19,7 +19,8 @@ import json
 
 # Import models
 from clip_model import CLIP
-from lora_model import LoRALinear, LoRAForLanguageModel
+# from lora_model import LoRALinear, LoRAForLanguageModel
+from lora_model import LoRALinear, apply_lora_to_model
 from frozen_model import FrozenModel
 
 def count_parameters(model):
@@ -67,20 +68,25 @@ def compare_parameter_efficiency():
     print(f"  Total parameters: {clip_total:,}")
     print(f"  Trainable parameters: {clip_trainable:,}")
     
-    # LoRA (simulated with GPT-2)
+    # LoRA (using the actual training model)
     print("\n[2/3] Analyzing LoRA...")
-    from transformers import GPT2LMHeadModel
-    base_model = GPT2LMHeadModel.from_pretrained('gpt2')
-    lora_model = LoRAForLanguageModel(base_model, rank=4)
+    from transformers import AutoModelForSequenceClassification
+    # Load the base model
+    base_model = AutoModelForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=5)
+    # Freeze parameters (same as in your fixed training script)
+    for param in base_model.parameters():
+        param.requires_grad = False
+    # Apply LoRA (rank=8, as used in your training)
+    lora_model = apply_lora_to_model(base_model, rank=8, target_modules=['q_lin', 'v_lin'])
     lora_total, lora_trainable = count_parameters(lora_model)
     results['LoRA'] = {
         'total': lora_total,
         'trainable': lora_trainable,
-        'percentage': 100 * lora_trainable / lora_total
+        'percentage': 100 * lora_trainable / (lora_total + 1e-9)
     }
     print(f"  Total parameters: {lora_total:,}")
     print(f"  Trainable parameters: {lora_trainable:,}")
-    print(f"  Reduction: {lora_total / lora_trainable:.1f}x")
+    print(f"  Reduction: {lora_total / (lora_trainable + 1e-9):.1f}x")
     
     # Frozen
     print("\n[3/3] Analyzing Frozen...")

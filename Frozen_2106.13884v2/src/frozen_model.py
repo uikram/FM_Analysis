@@ -11,7 +11,11 @@ class VisionEncoder(nn.Module):
     """Vision encoder that maps images to language model embedding space"""
     def __init__(self, output_dim=768, num_tokens=2):
         super().__init__()
-        resnet = models.resnet50(pretrained=True)
+
+        # Use the new 'weights' parameter API
+        weights = models.ResNet50_Weights.IMAGENET1K_V1
+        resnet = models.resnet50(weights=weights)
+
         self.backbone = nn.Sequential(*list(resnet.children())[:-1])
         self.feature_dim = 2048
         self.output_dim = output_dim

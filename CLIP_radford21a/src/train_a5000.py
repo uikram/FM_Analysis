@@ -3,7 +3,8 @@ CLIP Training Script - Optimized for RTX A5000 (24GB VRAM)
 Run with: CUDA_VISIBLE_DEVICES=2 python train_a5000.py
 """
 import os
-# os.environ['CUDA_VISIBLE_DEVICES'] = '2' # Better to set in terminal
+os.environ['CUDA_VISIBLE_DEVICES'] = '2' # Better to set in terminal
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import torch
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
@@ -72,7 +73,8 @@ def train_clip(args):
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
-    scaler = torch.cuda.amp.GradScaler() if MIXED_PRECISION and torch.cuda.is_available() else None
+    # scaler = torch.cuda.amp.GradScaler() if MIXED_PRECISION and torch.cuda.is_available() else None
+    scaler = torch.amp.GradScaler('cuda') if MIXED_PRECISION and torch.cuda.is_available() else None
 
     best_loss = float('inf')
 
@@ -88,7 +90,8 @@ def train_clip(args):
             optimizer.zero_grad()
 
             if scaler:
-                with torch.cuda.amp.autocast():
+                # with torch.cuda.amp.autocast():
+                with torch.amp.autocast('cuda'):
                     logits_i, logits_t = model(images, input_ids, attention_mask)
                     loss = contrastive_loss(logits_i, logits_t)
                 scaler.scale(loss).backward()

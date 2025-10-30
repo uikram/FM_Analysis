@@ -1,0 +1,24 @@
+{
+  "comparison_date": "2025-10-30 14:31:07.300396",
+  "models": {
+    "CLIP": {
+      "total": 91313729,
+      "trainable": 91313729,
+      "percentage": 100.0
+    },
+    "LoRA": {
+      "total": 67104773,
+      "trainable": 147456,
+      "percentage": 0.21973995799076765
+    },
+    "Frozen": {
+      "total": 151095104,
+      "trainable": 26655296,
+      "percentage": 17.641402861074837
+    }
+  },
+  "key_findings": {
+    "most_efficient": "LoRA",
+    "largest_model": "Frozen"
+  }
+}

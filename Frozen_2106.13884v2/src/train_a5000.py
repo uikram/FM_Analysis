@@ -4,7 +4,8 @@ Run with: CUDA_VISIBLE_DEVICES=2 python train_a5000.py
 """
 import os
 # This line is risky, recommend setting in terminal instead.
-# os.environ['CUDA_VISIBLE_DEVICES'] = '2' 
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ["TOKENIZERS_PARALLELISM"] = "false" 
 import torch
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader

@@ -104,7 +104,7 @@ def main():
     if args.model == 'lora' or args.model == 'all':
         success_lora = train_lora(args)
         
-    if args.model == 'frozen' or args.mdoel == 'all':
+    if args.model == 'frozen' or args.model == 'all':
         success_frozen = train_frozen(args)
     
     # Final summary
