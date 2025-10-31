@@ -1,6 +1,6 @@
 """
-Complete Model Comparison and Visualization Script (Robust Version)
-Loads evaluation results and handles missing keys safely.
+Enhanced Model Comparison and Visualization Script
+Comprehensive analysis of parameter efficiency, speed, and task performance
 
 Usage:
   cd evaluation/scripts

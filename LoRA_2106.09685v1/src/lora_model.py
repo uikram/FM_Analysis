@@ -32,6 +32,10 @@ class LoRALinear(nn.Module):
     def __init__(self, linear_layer, rank=4, alpha=1, dropout=0.0):
         super().__init__()
         self.linear = linear_layer
+        # Store initialization arguments for model recreation
+        self.__init_args__ = (linear_layer,)
+        self.__init_kwargs__ = {'rank': rank, 'alpha': alpha, 'dropout': dropout}
+        
         # Freeze the original weights
         for param in self.linear.parameters():
             param.requires_grad = False
