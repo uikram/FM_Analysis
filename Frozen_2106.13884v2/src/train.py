@@ -22,9 +22,10 @@ from datasets import load_dataset # <-- ADDED THIS
 BATCH_SIZE = 16
 NUM_WORKERS = 4
 
-class Flickr8kDataset(Dataset):
+class ConceptualCaptionsDataset(Dataset):
     """
-    Dataset for loading Flickr8k for Frozen model training.
+    Dataset for loading Conceptual Captions for Frozen model training.
+    As used in the original Frozen paper.
     """
     def __init__(self, hf_dataset, tokenizer, transform, max_length=50):
         self.hf_dataset = hf_dataset
@@ -39,13 +40,17 @@ class Flickr8kDataset(Dataset):
         item = self.hf_dataset[idx]
         
         # Load and transform the image
-        image = item['image']
-        if image.mode != "RGB":
-            image = image.convert("RGB")
-        image = self.transform(image)
+        try:
+            image = item['image']
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+            image = self.transform(image)
+        except Exception as e:
+            # Skip problematic images by returning a random index
+            return self.__getitem__(np.random.randint(0, len(self)))
         
-        # Get the first caption
-        caption = item['captions'][0]
+        # Get caption (field name is 'caption' in Conceptual Captions)
+        caption = item['caption']
         
         # Tokenize the caption
         tokens = self.tokenizer(caption, padding='max_length', truncation=True,
@@ -89,28 +94,28 @@ def train_frozen(args):
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-    # --- LOAD REAL DATASET ---
-    print("Loading Flickr8k dataset...")
-    hf_dataset = load_dataset("tsystems/flickr8k")
+    # --- LOAD CONCEPTUAL CAPTIONS DATASET ---
+    print("Loading Conceptual Captions dataset...")
+    cc_dataset = load_dataset("conceptual_captions")
     
-    # Create a 90/10 train/validation split
-    if 'validation' not in hf_dataset:
-        print("Creating validation split...")
-        train_val_split = hf_dataset['train'].train_test_split(test_size=0.1, seed=42)
-        hf_dataset['train'] = train_val_split['train']
-        hf_dataset['validation'] = train_val_split['test']
-        
-    train_dataset = Flickr8kDataset(
-        hf_dataset['train'], 
-        tokenizer=tokenizer, 
+    # Dataset already has train/validation splits
+    print("\nPreparing training dataset...")
+    train_dataset = ConceptualCaptionsDataset(
+        cc_dataset['train'],
+        tokenizer=tokenizer,
         transform=transform
     )
-    val_dataset = Flickr8kDataset(
-        hf_dataset['validation'], 
-        tokenizer=tokenizer, 
+    
+    print("Preparing validation dataset...")
+    val_dataset = ConceptualCaptionsDataset(
+        cc_dataset['validation'],
+        tokenizer=tokenizer,
         transform=transform
     )
-    print(f"✓ Loaded {len(train_dataset)} training samples and {len(val_dataset)} validation samples.")
+    
+    print(f"\n✓ Loaded Conceptual Captions dataset:")
+    print(f"  Training samples: {len(train_dataset):,}")
+    print(f"  Validation samples: {len(val_dataset):,}")
     # --- END OF DATASET LOADING ---
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size,

@@ -24,6 +24,51 @@ BATCH_SIZE = 64
 NUM_WORKERS = 4
 MIXED_PRECISION = True
 
+class CombinedImageCaptionDataset(Dataset):
+    """
+    Dataset that combines multiple image-caption datasets for CLIP training.
+    """
+    def __init__(self, datasets, tokenizer, transform):
+        self.datasets = datasets
+        self.dataset_sizes = [len(ds) for ds in datasets]
+        self.total_size = sum(self.dataset_sizes)
+        self.tokenizer = tokenizer
+        self.transform = transform
+        
+        # Calculate cumulative sizes for dataset indexing
+        self.cumsum_sizes = np.cumsum([0] + self.dataset_sizes)
+
+    def __len__(self):
+        return self.total_size
+
+    def __getitem__(self, idx):
+        # Find which dataset this index belongs to
+        dataset_idx = np.searchsorted(self.cumsum_sizes[1:], idx, side='right')
+        local_idx = idx - self.cumsum_sizes[dataset_idx]
+        
+        # Get item from appropriate dataset
+        item = self.datasets[dataset_idx][local_idx]
+        
+        # Load and transform the image
+        image = item['image']
+        if image.mode != "RGB":
+            image = image.convert("RGB")
+        image = self.transform(image)
+        
+        # Get caption (handle different dataset formats)
+        caption = item['captions'][0] if isinstance(item.get('captions'), list) else item['caption']
+        
+        # Tokenize caption
+        encoded = self.tokenizer(
+            caption,
+            padding="max_length",
+            max_length=77,
+            truncation=True,
+            return_tensors="pt"
+        )
+        
+        return image, encoded['input_ids'].squeeze(0)
+
 class Flickr8kDataset(Dataset):
     """
     Dataset for loading Flickr8k for CLIP training.
@@ -77,30 +122,46 @@ def train_clip(args):
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-    # --- LOAD REAL DATASET ---
-    print("Loading Flickr8k dataset...")
-    hf_dataset = load_dataset("tsystems/flickr8k")
-
-    # Check if 'validation' split exists. If not, create it from 'train'.
-    if 'validation' not in hf_dataset:
-        print("No 'validation' split found. Creating one from the 'train' split (90% train / 10% val)...")
-        # Split the 'train' dataset into 90% train and 10% validation
-        train_val_split = hf_dataset['train'].train_test_split(test_size=0.1, seed=42)
-        hf_dataset['train'] = train_val_split['train']
-        hf_dataset['validation'] = train_val_split['test'] # Use the 'test' part as our validation
-
-    train_dataset = Flickr8kDataset(
-        hf_dataset['train'], 
-        tokenizer=tokenizer, 
+    # --- LOAD COMBINED DATASETS ---
+    print("Loading datasets...")
+    
+    # Load Flickr8k
+    print("1. Loading Flickr8k...")
+    flickr8k = load_dataset("tsystems/flickr8k")
+    if 'validation' not in flickr8k:
+        train_val_split = flickr8k['train'].train_test_split(test_size=0.1, seed=42)
+        flickr8k['train'] = train_val_split['train']
+        flickr8k['validation'] = train_val_split['test']
+    
+    # Load MS-COCO
+    print("\n2. Loading MS-COCO captions...")
+    coco = load_dataset("coco_captions")
+    
+    # Create combined training dataset
+    train_datasets = [
+        flickr8k['train'],
+        coco['train']
+    ]
+    val_datasets = [
+        flickr8k['validation'],
+        coco['validation']
+    ]
+    
+    train_dataset = CombinedImageCaptionDataset(
+        train_datasets,
+        tokenizer=tokenizer,
         transform=transform
     )
-    # This will now work
-    val_dataset = Flickr8kDataset(
-        hf_dataset['validation'], 
-        tokenizer=tokenizer, 
+    
+    val_dataset = CombinedImageCaptionDataset(
+        val_datasets,
+        tokenizer=tokenizer,
         transform=transform
     )
-    print(f"✓ Loaded {len(train_dataset)} training samples and {len(val_dataset)} validation samples.")
+    
+    print(f"\n✓ Loaded combined datasets:")
+    print(f"  Training samples: {len(train_dataset):,}")
+    print(f"  Validation samples: {len(val_dataset):,}")
     # --- END OF DATASET LOADING ---
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size,
