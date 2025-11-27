@@ -1,0 +1,70 @@
+{
+    "model": "ViT-B-32",
+    "pretrained": "openai",
+    "evaluation_time": 1762497934.256048,
+    "scores": {
+        "CIFAR100": {
+            "1-shot": 28.470000000000002,
+            "2-shot": 38.12,
+            "4-shot": 45.97,
+            "8-shot": 51.12,
+            "16-shot": 55.620000000000005
+        },
+        "Food101": {
+            "1-shot": 39.532673267326736,
+            "2-shot": 47.87326732673267,
+            "4-shot": 54.17029702970297,
+            "8-shot": 60.637623762376236,
+            "16-shot": 66.97425742574258
+        },
+        "Flowers102": {
+            "1-shot": 56.83851032688242,
+            "2-shot": 65.92941941779151,
+            "4-shot": 73.78435517970402,
+            "8-shot": 78.56562042608554,
+            "16-shot": 80.04553585948935
+        },
+        "DTD": {
+            "1-shot": 29.308510638297875,
+            "2-shot": 36.06382978723404,
+            "4-shot": 41.96808510638298,
+            "8-shot": 46.27659574468085,
+            "16-shot": 52.3936170212766
+        },
+        "EuroSAT": {
+            "1-shot": 45.57407407407407,
+            "2-shot": 49.425925925925924,
+            "4-shot": 55.48518518518518,
+            "8-shot": 57.440740740740736,
+            "16-shot": 62.48518518518519
+        },
+        "STL10": {
+            "1-shot": 74.225,
+            "2-shot": 86.6,
+            "4-shot": 92.425,
+            "8-shot": 95.6375,
+            "16-shot": 96.075
+        },
+        "FGVCAircraft": {
+            "1-shot": 14.67146714671467,
+            "2-shot": 18.42184218421842,
+            "4-shot": 18.271827182718273,
+            "8-shot": 19.98199819981998,
+            "16-shot": 24.062406240624064
+        },
+        "MNIST": {
+            "1-shot": "FAILED (Boolean value of Tensor with more than one value is ambiguous)",
+            "2-shot": "FAILED (Boolean value of Tensor with more than one value is ambiguous)",
+            "4-shot": "FAILED (Boolean value of Tensor with more than one value is ambiguous)",
+            "8-shot": "FAILED (Boolean value of Tensor with more than one value is ambiguous)",
+            "16-shot": "FAILED (Boolean value of Tensor with more than one value is ambiguous)"
+        },
+        "Country211": {
+            "1-shot": 4.909952606635072,
+            "2-shot": 6.663507109004739,
+            "4-shot": 7.516587677725119,
+            "8-shot": 9.18957345971564,
+            "16-shot": 10.938388625592417
+        }
+    }
+}

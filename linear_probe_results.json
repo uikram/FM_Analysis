@@ -1,0 +1,51 @@
+{
+    "model": "ViT-B/32",
+    "evaluation_time": 1762163593.9925902,
+    "scores": {
+        "CIFAR100": {
+            "accuracy": 72.44,
+            "total_test_samples": 10000,
+            "train_samples": 50000
+        },
+        "Food101": {
+            "accuracy": 86.08316831683169,
+            "total_test_samples": 25250,
+            "train_samples": 75750
+        },
+        "Flowers102": {
+            "accuracy": 82.82647584973166,
+            "total_test_samples": 6149,
+            "train_samples": 1020
+        },
+        "DTD": {
+            "accuracy": 60.691489361702125,
+            "total_test_samples": 1880,
+            "train_samples": 1880
+        },
+        "EuroSAT": {
+            "accuracy": 90.26296296296297,
+            "total_test_samples": 27000,
+            "train_samples": 27000
+        },
+        "STL10": {
+            "accuracy": 98.35000000000001,
+            "total_test_samples": 8000,
+            "train_samples": 5000
+        },
+        "FGVCAircraft": {
+            "accuracy": 28.352835283528353,
+            "total_test_samples": 3333,
+            "train_samples": 3334
+        },
+        "MNIST": {
+            "accuracy": 94.84,
+            "total_test_samples": 10000,
+            "train_samples": 60000
+        },
+        "Country211": {
+            "accuracy": 17.95734597156398,
+            "total_test_samples": 21100,
+            "train_samples": 31650
+        }
+    }
+}
