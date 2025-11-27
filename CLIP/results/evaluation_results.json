@@ -1,0 +1,62 @@
+[
+    {
+        "Dataset": "CIFAR100",
+        "Model": "Standard CLIP",
+        "Top-1": 64.13,
+        "Top-5": 88.28
+    },
+    {
+        "Dataset": "CIFAR100",
+        "Model": "LoRA CLIP",
+        "Top-1": 60.260000000000005,
+        "Top-5": 85.74000000000001
+    },
+    {
+        "Dataset": "EuroSAT",
+        "Model": "Standard CLIP",
+        "Top-1": 23.537037037037038,
+        "Top-5": 74.83333333333333
+    },
+    {
+        "Dataset": "EuroSAT",
+        "Model": "LoRA CLIP",
+        "Top-1": 26.12962962962963,
+        "Top-5": 88.90740740740742
+    },
+    {
+        "Dataset": "DTD",
+        "Model": "Standard CLIP",
+        "Top-1": 44.20212765957447,
+        "Top-5": 77.07446808510639
+    },
+    {
+        "Dataset": "DTD",
+        "Model": "LoRA CLIP",
+        "Top-1": 41.22340425531915,
+        "Top-5": 73.82978723404256
+    },
+    {
+        "Dataset": "Flowers102",
+        "Model": "Standard CLIP",
+        "Top-1": 24.377947633761586,
+        "Top-5": 38.120019515368355
+    },
+    {
+        "Dataset": "Flowers102",
+        "Model": "LoRA CLIP",
+        "Top-1": 22.01984062449179,
+        "Top-5": 37.225565132541874
+    },
+    {
+        "Dataset": "Food101",
+        "Model": "Standard CLIP",
+        "Top-1": 82.34851485148515,
+        "Top-5": 97.02178217821782
+    },
+    {
+        "Dataset": "Food101",
+        "Model": "LoRA CLIP",
+        "Top-1": 75.92871287128713,
+        "Top-5": 94.9029702970297
+    }
+]
